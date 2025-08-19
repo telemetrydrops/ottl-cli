@@ -1,0 +1,61 @@
+version: 2
+project_name: ottl
+builds:
+  - id: ottl
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: ottl
+    flags:
+      - -trimpath
+    env:
+      - CGO_ENABLED=0
+archives:
+  - id: ottl
+    builds:
+      - ottl
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+dockers:
+  - goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile
+    image_templates:
+      - ghcr.io/telemetrydrops/ottl:{{ .Version }}-amd64
+      - ghcr.io/telemetrydrops/ottl:latest-amd64
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.name={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Version}}
+      - --label=org.opencontainers.image.source={{.GitURL}}
+      - --label=org.opencontainers.image.licenses=Apache-2.0
+    use: buildx
+  - goos: linux
+    goarch: arm64
+    dockerfile: Dockerfile
+    image_templates:
+      - ghcr.io/telemetrydrops/ottl:{{ .Version }}-arm64
+      - ghcr.io/telemetrydrops/ottl:latest-arm64
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.name={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Version}}
+      - --label=org.opencontainers.image.source={{.GitURL}}
+      - --label=org.opencontainers.image.licenses=Apache-2.0
+    use: buildx
+docker_manifests:
+  - name_template: ghcr.io/telemetrydrops/ottl:{{ .Version }}
+    image_templates:
+      - ghcr.io/telemetrydrops/ottl:{{ .Version }}-amd64
+      - ghcr.io/telemetrydrops/ottl:{{ .Version }}-arm64
+  - name_template: ghcr.io/telemetrydrops/ottl:latest
+    image_templates:
+      - ghcr.io/telemetrydrops/ottl:latest-amd64
+      - ghcr.io/telemetrydrops/ottl:latest-arm64
