@@ -1,0 +1,89 @@
+{
+  "resourceMetrics": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "test-service"
+            }
+          }
+        ]
+      },
+      "scopeMetrics": [
+        {
+          "scope": {
+            "name": "test-meter",
+            "version": "1.0.0"
+          },
+          "metrics": [
+            {
+              "name": "http_requests_total",
+              "description": "Total HTTP requests",
+              "unit": "1",
+              "sum": {
+                "dataPoints": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "method",
+                        "value": {
+                          "stringValue": "GET"
+                        }
+                      }
+                    ],
+                    "startTimeUnixNano": "1609459200000000000",
+                    "timeUnixNano": "1609459260000000000",
+                    "asInt": "150"
+                  }
+                ],
+                "aggregationTemporality": 2,
+                "isMonotonic": true
+              }
+            },
+            {
+              "name": "cpu_usage_percent",
+              "description": "CPU usage percentage",
+              "unit": "%",
+              "gauge": {
+                "dataPoints": [
+                  {
+                    "timeUnixNano": "1609459260000000000",
+                    "asDouble": 75.5
+                  }
+                ]
+              }
+            },
+            {
+              "name": "request_duration_histogram",
+              "description": "Request duration histogram",
+              "unit": "ms",
+              "histogram": {
+                "dataPoints": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "endpoint",
+                        "value": {
+                          "stringValue": "/api/users"
+                        }
+                      }
+                    ],
+                    "startTimeUnixNano": "1609459200000000000",
+                    "timeUnixNano": "1609459260000000000",
+                    "count": "100",
+                    "sum": 12500.0,
+                    "bucketCounts": ["10", "25", "40", "20", "5"],
+                    "explicitBounds": [10.0, 50.0, 100.0, 500.0]
+                  }
+                ],
+                "aggregationTemporality": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
