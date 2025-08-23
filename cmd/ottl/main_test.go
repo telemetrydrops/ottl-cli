@@ -3,86 +3,23 @@ package main
 import (
 	"bytes"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-// Test data constants
-const (
-	validTracesJSON = `{
-		"resourceSpans": [{
-			"resource": {
-				"attributes": [{"key": "service.name", "value": {"stringValue": "test-service"}}]
-			},
-			"scopeSpans": [{
-				"scope": {"name": "test-tracer", "version": "1.0.0"},
-				"spans": [{
-					"traceId": "0123456789abcdef0123456789abcdef",
-					"spanId": "0123456789abcdef",
-					"name": "test-span",
-					"kind": 1,
-					"startTimeUnixNano": "1609459200000000000",
-					"endTimeUnixNano": "1609459201000000000",
-					"attributes": [
-						{"key": "http.method", "value": {"stringValue": "GET"}},
-						{"key": "http.status_code", "value": {"intValue": "200"}}
-					]
-				}]
-			}]
-		}]
-	}`
-
-	validLogsJSON = `{
-		"resourceLogs": [{
-			"resource": {
-				"attributes": [{"key": "service.name", "value": {"stringValue": "test-service"}}]
-			},
-			"scopeLogs": [{
-				"scope": {"name": "test-logger", "version": "1.0.0"},
-				"logRecords": [{
-					"timeUnixNano": "1609459200000000000",
-					"severityNumber": 9,
-					"severityText": "INFO",
-					"body": {"stringValue": "This is a test log message"},
-					"attributes": [
-						{"key": "log.level", "value": {"stringValue": "INFO"}},
-						{"key": "component", "value": {"stringValue": "auth"}}
-					]
-				}]
-			}]
-		}]
-	}`
-
-	validMetricsJSON = `{
-		"resourceMetrics": [{
-			"resource": {
-				"attributes": [{"key": "service.name", "value": {"stringValue": "test-service"}}]
-			},
-			"scopeMetrics": [{
-				"scope": {"name": "test-meter", "version": "1.0.0"},
-				"metrics": [{
-					"name": "http_requests_total",
-					"description": "Total HTTP requests",
-					"unit": "1",
-					"sum": {
-						"dataPoints": [{
-							"attributes": [{"key": "method", "value": {"stringValue": "GET"}}],
-							"startTimeUnixNano": "1609459200000000000",
-							"timeUnixNano": "1609459260000000000",
-							"asInt": "150"
-						}],
-						"aggregationTemporality": 2,
-						"isMonotonic": true
-					}
-				}]
-			}]
-		}]
-	}`
-)
+// Helper functions to read test data from external files
+func readTestData(t *testing.T, filename string) []byte {
+	data, err := os.ReadFile(filepath.Join("../../testdata", filename))
+	require.NoError(t, err, "Failed to read test data file: %s", filename)
+	return data
+}
 
 func TestContextTypeString(t *testing.T) {
 	tests := []struct {
@@ -97,9 +34,9 @@ func TestContextTypeString(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if got := test.ctx.String(); got != test.expected {
-			t.Errorf("contextType(%d).String() = %s, want %s", test.ctx, got, test.expected)
-		}
+		t.Run(test.expected, func(t *testing.T) {
+			assert.Equal(t, test.expected, test.ctx.String())
+		})
 	}
 }
 
@@ -118,82 +55,75 @@ func TestParseContextFlag(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if got := parseContextFlag(test.flag); got != test.expected {
-			t.Errorf("parseContextFlag(%s) = %v, want %v", test.flag, got, test.expected)
-		}
+		t.Run(test.flag, func(t *testing.T) {
+			assert.Equal(t, test.expected, parseContextFlag(test.flag))
+		})
 	}
 }
 
 func TestDetectContextType(t *testing.T) {
 	tests := []struct {
 		name         string
-		data         []byte
+		filename     string
 		expectedType contextType
 		shouldError  bool
 	}{
 		{
 			name:         "valid traces",
-			data:         []byte(validTracesJSON),
+			filename:     "traces.json",
 			expectedType: contextTypeSpan,
 			shouldError:  false,
 		},
 		{
 			name:         "valid logs",
-			data:         []byte(validLogsJSON),
+			filename:     "logs.json",
 			expectedType: contextTypeLog,
 			shouldError:  false,
 		},
 		{
 			name:         "valid metrics",
-			data:         []byte(validMetricsJSON),
+			filename:     "metrics.json",
 			expectedType: contextTypeMetric,
 			shouldError:  false,
-		},
-		{
-			name:         "empty JSON",
-			data:         []byte("{}"),
-			expectedType: contextTypeUnknown,
-			shouldError:  true,
-		},
-		{
-			name:         "invalid JSON",
-			data:         []byte("{invalid}"),
-			expectedType: contextTypeUnknown,
-			shouldError:  true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx, data, err := detectContextType(test.data)
+			data := readTestData(t, test.filename)
+			ctx, parsedData, err := detectContextType(data)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("detectContextType() expected error but got none")
-				}
-				if ctx != contextTypeUnknown {
-					t.Errorf("detectContextType() returned context %v, expected unknown on error", ctx)
-				}
+				assert.Error(t, err)
+				assert.Equal(t, contextTypeUnknown, ctx)
 				return
 			}
 
-			if err != nil {
-				t.Errorf("detectContextType() unexpected error: %v", err)
-				return
-			}
-
-			if ctx != test.expectedType {
-				t.Errorf("detectContextType() = %v, want %v", ctx, test.expectedType)
-			}
-
-			if data == nil {
-				t.Errorf("detectContextType() returned nil data")
-			}
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedType, ctx)
+			assert.NotNil(t, parsedData)
 		})
 	}
+
+	// Test error cases
+	t.Run("empty JSON", func(t *testing.T) {
+		ctx, _, err := detectContextType([]byte("{}"))
+		assert.Error(t, err)
+		assert.Equal(t, contextTypeUnknown, ctx)
+	})
+
+	t.Run("invalid JSON", func(t *testing.T) {
+		ctx, _, err := detectContextType([]byte("{invalid}"))
+		assert.Error(t, err)
+		assert.Equal(t, contextTypeUnknown, ctx)
+	})
 }
 
 func TestParseDataWithContext(t *testing.T) {
+	tracesData := readTestData(t, "traces.json")
+	logsData := readTestData(t, "logs.json")
+	metricsData := readTestData(t, "metrics.json")
+
 	tests := []struct {
 		name        string
 		data        []byte
@@ -202,31 +132,31 @@ func TestParseDataWithContext(t *testing.T) {
 	}{
 		{
 			name:        "parse traces as span context",
-			data:        []byte(validTracesJSON),
+			data:        tracesData,
 			ctx:         contextTypeSpan,
 			shouldError: false,
 		},
 		{
 			name:        "parse logs as log context",
-			data:        []byte(validLogsJSON),
+			data:        logsData,
 			ctx:         contextTypeLog,
 			shouldError: false,
 		},
 		{
 			name:        "parse metrics as metric context",
-			data:        []byte(validMetricsJSON),
+			data:        metricsData,
 			ctx:         contextTypeMetric,
 			shouldError: false,
 		},
 		{
 			name:        "parse metrics as datapoint context",
-			data:        []byte(validMetricsJSON),
+			data:        metricsData,
 			ctx:         contextTypeDatapoint,
 			shouldError: false,
 		},
 		{
 			name:        "invalid context type",
-			data:        []byte(validTracesJSON),
+			data:        tracesData,
 			ctx:         contextTypeUnknown,
 			shouldError: true,
 		},
@@ -243,36 +173,21 @@ func TestParseDataWithContext(t *testing.T) {
 			data, err := parseDataWithContext(test.data, test.ctx)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("parseDataWithContext() expected error but got none")
-				}
+				assert.Error(t, err)
 				return
 			}
 
-			if err != nil {
-				t.Errorf("parseDataWithContext() unexpected error: %v", err)
-				return
-			}
-
-			if data == nil {
-				t.Errorf("parseDataWithContext() returned nil data")
-				return
-			}
+			require.NoError(t, err)
+			require.NotNil(t, data)
 
 			// Verify correct type is returned
 			switch test.ctx {
 			case contextTypeSpan:
-				if _, ok := data.(ptrace.Traces); !ok {
-					t.Errorf("parseDataWithContext() expected ptrace.Traces, got %T", data)
-				}
+				assert.IsType(t, ptrace.Traces{}, data)
 			case contextTypeLog:
-				if _, ok := data.(plog.Logs); !ok {
-					t.Errorf("parseDataWithContext() expected plog.Logs, got %T", data)
-				}
+				assert.IsType(t, plog.Logs{}, data)
 			case contextTypeMetric, contextTypeDatapoint:
-				if _, ok := data.(pmetric.Metrics); !ok {
-					t.Errorf("parseDataWithContext() expected pmetric.Metrics, got %T", data)
-				}
+				assert.IsType(t, pmetric.Metrics{}, data)
 			}
 		})
 	}
@@ -337,20 +252,12 @@ func TestReadStdin(t *testing.T) {
 			r.Close()
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("readStdin() expected error but got none")
-				}
+				assert.Error(t, err)
 				return
 			}
 
-			if err != nil {
-				t.Errorf("readStdin() unexpected error: %v", err)
-				return
-			}
-
-			if result != test.expected {
-				t.Errorf("readStdin() = %q, want %q", result, test.expected)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, test.expected, result)
 		})
 	}
 }
@@ -358,15 +265,12 @@ func TestReadStdin(t *testing.T) {
 func TestReadInputFile(t *testing.T) {
 	// Create a temporary file for testing
 	tmpFile, err := os.CreateTemp("", "ottl_test_*.json")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
+	require.NoError(t, err)
 	defer os.Remove(tmpFile.Name())
 
 	testData := "test file content"
-	if _, err := tmpFile.WriteString(testData); err != nil {
-		t.Fatalf("Failed to write to temp file: %v", err)
-	}
+	_, err = tmpFile.WriteString(testData)
+	require.NoError(t, err)
 	tmpFile.Close()
 
 	tests := []struct {
@@ -394,29 +298,18 @@ func TestReadInputFile(t *testing.T) {
 			result, err := readInputFile(test.filename)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("readInputFile() expected error but got none")
-				}
+				assert.Error(t, err)
 				return
 			}
 
-			if err != nil {
-				t.Errorf("readInputFile() unexpected error: %v", err)
-				return
-			}
-
-			if string(result) != test.expected {
-				t.Errorf("readInputFile() = %q, want %q", string(result), test.expected)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, test.expected, string(result))
 		})
 	}
 }
 
 func TestApplySpanTransformation(t *testing.T) {
-	traces, err := (&ptrace.JSONUnmarshaler{}).UnmarshalTraces([]byte(validTracesJSON))
-	if err != nil {
-		t.Fatalf("Failed to unmarshal traces: %v", err)
-	}
+	tracesData := readTestData(t, "traces.json")
 
 	tests := []struct {
 		name        string
@@ -442,39 +335,32 @@ func TestApplySpanTransformation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := applySpanTransformation(test.statement, traces)
+			// Make a copy for each test to avoid side effects
+			tracesCopy, err := (&ptrace.JSONUnmarshaler{}).UnmarshalTraces(tracesData)
+			require.NoError(t, err)
+
+			err = applySpanTransformation(test.statement, tracesCopy)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("applySpanTransformation() expected error but got none")
-				}
+				assert.Error(t, err)
 				return
 			}
 
-			if err != nil {
-				t.Errorf("applySpanTransformation() unexpected error: %v", err)
-				return
-			}
+			require.NoError(t, err)
 
 			// Verify transformation was applied (for valid case)
 			if test.statement == "set(attributes[\"env\"], \"test\")" {
-				span := traces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+				span := tracesCopy.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
 				envAttr, exists := span.Attributes().Get("env")
-				if !exists {
-					t.Errorf("Expected 'env' attribute to be set")
-				} else if envAttr.AsString() != "test" {
-					t.Errorf("Expected 'env' attribute to be 'test', got %s", envAttr.AsString())
-				}
+				assert.True(t, exists, "Expected 'env' attribute to be set")
+				assert.Equal(t, "test", envAttr.AsString())
 			}
 		})
 	}
 }
 
 func TestApplyLogTransformation(t *testing.T) {
-	logs, err := (&plog.JSONUnmarshaler{}).UnmarshalLogs([]byte(validLogsJSON))
-	if err != nil {
-		t.Fatalf("Failed to unmarshal logs: %v", err)
-	}
+	logsData := readTestData(t, "logs.json")
 
 	tests := []struct {
 		name        string
@@ -495,28 +381,23 @@ func TestApplyLogTransformation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := applyLogTransformation(test.statement, logs)
+			// Make a copy for each test to avoid side effects
+			logsCopy, err := (&plog.JSONUnmarshaler{}).UnmarshalLogs(logsData)
+			require.NoError(t, err)
+
+			err = applyLogTransformation(test.statement, logsCopy)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("applyLogTransformation() expected error but got none")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("applyLogTransformation() unexpected error: %v", err)
-				return
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestApplyMetricTransformation(t *testing.T) {
-	metrics, err := (&pmetric.JSONUnmarshaler{}).UnmarshalMetrics([]byte(validMetricsJSON))
-	if err != nil {
-		t.Fatalf("Failed to unmarshal metrics: %v", err)
-	}
+	metricsData := readTestData(t, "metrics.json")
 
 	tests := []struct {
 		name        string
@@ -525,7 +406,7 @@ func TestApplyMetricTransformation(t *testing.T) {
 	}{
 		{
 			name:        "valid metric transformation",
-			statement:   "set(name, \"new_\" + name)",
+			statement:   "set(name, \"new_metric\")",
 			shouldError: false,
 		},
 		{
@@ -537,28 +418,23 @@ func TestApplyMetricTransformation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := applyMetricTransformation(test.statement, metrics)
+			// Make a copy for each test to avoid side effects
+			metricsCopy, err := (&pmetric.JSONUnmarshaler{}).UnmarshalMetrics(metricsData)
+			require.NoError(t, err)
+
+			err = applyMetricTransformation(test.statement, metricsCopy)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("applyMetricTransformation() expected error but got none")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("applyMetricTransformation() unexpected error: %v", err)
-				return
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestApplyDataPointTransformation(t *testing.T) {
-	metrics, err := (&pmetric.JSONUnmarshaler{}).UnmarshalMetrics([]byte(validMetricsJSON))
-	if err != nil {
-		t.Fatalf("Failed to unmarshal metrics: %v", err)
-	}
+	metricsData := readTestData(t, "metrics.json")
 
 	tests := []struct {
 		name        string
@@ -579,27 +455,32 @@ func TestApplyDataPointTransformation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := applyDataPointTransformation(test.statement, metrics)
+			// Make a copy for each test to avoid side effects
+			metricsCopy, err := (&pmetric.JSONUnmarshaler{}).UnmarshalMetrics(metricsData)
+			require.NoError(t, err)
+
+			err = applyDataPointTransformation(test.statement, metricsCopy)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("applyDataPointTransformation() expected error but got none")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("applyDataPointTransformation() unexpected error: %v", err)
-				return
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestOutputTransformedData(t *testing.T) {
-	traces, _ := (&ptrace.JSONUnmarshaler{}).UnmarshalTraces([]byte(validTracesJSON))
-	logs, _ := (&plog.JSONUnmarshaler{}).UnmarshalLogs([]byte(validLogsJSON))
-	metrics, _ := (&pmetric.JSONUnmarshaler{}).UnmarshalMetrics([]byte(validMetricsJSON))
+	tracesData := readTestData(t, "traces.json")
+	logsData := readTestData(t, "logs.json")
+	metricsData := readTestData(t, "metrics.json")
+
+	traces, err := (&ptrace.JSONUnmarshaler{}).UnmarshalTraces(tracesData)
+	require.NoError(t, err)
+	logs, err := (&plog.JSONUnmarshaler{}).UnmarshalLogs(logsData)
+	require.NoError(t, err)
+	metrics, err := (&pmetric.JSONUnmarshaler{}).UnmarshalMetrics(metricsData)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name        string
@@ -657,27 +538,19 @@ func TestOutputTransformedData(t *testing.T) {
 			output := buf.String()
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("outputTransformedData() expected error but got none")
-				}
+				assert.Error(t, err)
 				return
 			}
 
-			if err != nil {
-				t.Errorf("outputTransformedData() unexpected error: %v", err)
-				return
-			}
+			require.NoError(t, err)
 
 			// Verify we got some JSON output
-			if len(output) == 0 {
-				t.Errorf("outputTransformedData() produced no output")
-			}
+			assert.NotEmpty(t, output)
 
 			// Basic JSON validation - should start with { and end with }
 			output = strings.TrimSpace(output)
-			if !strings.HasPrefix(output, "{") || !strings.HasSuffix(output, "}") {
-				t.Errorf("outputTransformedData() produced invalid JSON: %s", output)
-			}
+			assert.True(t, strings.HasPrefix(output, "{"))
+			assert.True(t, strings.HasSuffix(output, "}"))
 		})
 	}
 }
@@ -685,15 +558,13 @@ func TestOutputTransformedData(t *testing.T) {
 // Integration test that exercises the full transform pipeline
 func TestTransformIntegration(t *testing.T) {
 	// Create temporary test files
+	tracesData := readTestData(t, "traces.json")
 	tracesFile, err := os.CreateTemp("", "traces_*.json")
-	if err != nil {
-		t.Fatalf("Failed to create traces temp file: %v", err)
-	}
+	require.NoError(t, err)
 	defer os.Remove(tracesFile.Name())
 
-	if _, err := tracesFile.WriteString(validTracesJSON); err != nil {
-		t.Fatalf("Failed to write traces temp file: %v", err)
-	}
+	_, err = tracesFile.Write(tracesData)
+	require.NoError(t, err)
 	tracesFile.Close()
 
 	tests := []struct {
@@ -750,21 +621,14 @@ func TestTransformIntegration(t *testing.T) {
 			buf.ReadFrom(outR)
 
 			if test.shouldError {
-				if err == nil {
-					t.Errorf("runTransform() expected error but got none")
-				}
+				assert.Error(t, err)
 				return
 			}
 
-			if err != nil {
-				t.Errorf("runTransform() unexpected error: %v", err)
-				return
-			}
+			require.NoError(t, err)
 
 			output := buf.String()
-			if len(output) == 0 {
-				t.Errorf("runTransform() produced no output")
-			}
+			assert.NotEmpty(t, output, "Expected some output from transformation")
 		})
 	}
 }

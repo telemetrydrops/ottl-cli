@@ -392,7 +392,7 @@ func applyMetricTransformation(statement string, metrics pmetric.Metrics) error 
 
 			for k := 0; k < metricSlice.Len(); k++ {
 				metric := metricSlice.At(k)
-				metricCtx := ottlmetric.NewTransformContext(metric, sm.Scope(), rm.Resource(), sm, rm)
+				metricCtx := ottlmetric.NewTransformContext(metric, metricSlice, sm.Scope(), rm.Resource(), sm, rm)
 
 				_, _, err := parsedStatement.Execute(context.Background(), metricCtx)
 				if err != nil {
@@ -436,7 +436,7 @@ func applyDataPointTransformation(statement string, metrics pmetric.Metrics) err
 					dataPoints := gauge.DataPoints()
 					for l := 0; l < dataPoints.Len(); l++ {
 						dp := dataPoints.At(l)
-						dpCtx := ottldatapoint.NewTransformContext(dp, metric, sm.Scope(), rm.Resource(), sm, rm)
+						dpCtx := ottldatapoint.NewTransformContext(dp, metric, metricSlice, sm.Scope(), rm.Resource(), sm, rm)
 						_, _, err := parsedStatement.Execute(context.Background(), dpCtx)
 						if err != nil {
 							return fmt.Errorf("failed to execute gauge datapoint transformation: %w", err)
@@ -448,7 +448,7 @@ func applyDataPointTransformation(statement string, metrics pmetric.Metrics) err
 					dataPoints := sum.DataPoints()
 					for l := 0; l < dataPoints.Len(); l++ {
 						dp := dataPoints.At(l)
-						dpCtx := ottldatapoint.NewTransformContext(dp, metric, sm.Scope(), rm.Resource(), sm, rm)
+						dpCtx := ottldatapoint.NewTransformContext(dp, metric, metricSlice, sm.Scope(), rm.Resource(), sm, rm)
 						_, _, err := parsedStatement.Execute(context.Background(), dpCtx)
 						if err != nil {
 							return fmt.Errorf("failed to execute sum datapoint transformation: %w", err)
@@ -460,7 +460,7 @@ func applyDataPointTransformation(statement string, metrics pmetric.Metrics) err
 					dataPoints := histogram.DataPoints()
 					for l := 0; l < dataPoints.Len(); l++ {
 						dp := dataPoints.At(l)
-						dpCtx := ottldatapoint.NewTransformContext(dp, metric, sm.Scope(), rm.Resource(), sm, rm)
+						dpCtx := ottldatapoint.NewTransformContext(dp, metric, metricSlice, sm.Scope(), rm.Resource(), sm, rm)
 						_, _, err := parsedStatement.Execute(context.Background(), dpCtx)
 						if err != nil {
 							return fmt.Errorf("failed to execute histogram datapoint transformation: %w", err)
@@ -472,7 +472,7 @@ func applyDataPointTransformation(statement string, metrics pmetric.Metrics) err
 					dataPoints := expHistogram.DataPoints()
 					for l := 0; l < dataPoints.Len(); l++ {
 						dp := dataPoints.At(l)
-						dpCtx := ottldatapoint.NewTransformContext(dp, metric, sm.Scope(), rm.Resource(), sm, rm)
+						dpCtx := ottldatapoint.NewTransformContext(dp, metric, metricSlice, sm.Scope(), rm.Resource(), sm, rm)
 						_, _, err := parsedStatement.Execute(context.Background(), dpCtx)
 						if err != nil {
 							return fmt.Errorf("failed to execute exponential histogram datapoint transformation: %w", err)
@@ -484,7 +484,7 @@ func applyDataPointTransformation(statement string, metrics pmetric.Metrics) err
 					dataPoints := summary.DataPoints()
 					for l := 0; l < dataPoints.Len(); l++ {
 						dp := dataPoints.At(l)
-						dpCtx := ottldatapoint.NewTransformContext(dp, metric, sm.Scope(), rm.Resource(), sm, rm)
+						dpCtx := ottldatapoint.NewTransformContext(dp, metric, metricSlice, sm.Scope(), rm.Resource(), sm, rm)
 						_, _, err := parsedStatement.Execute(context.Background(), dpCtx)
 						if err != nil {
 							return fmt.Errorf("failed to execute summary datapoint transformation: %w", err)
