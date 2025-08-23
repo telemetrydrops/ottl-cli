@@ -154,6 +154,16 @@ for i := 0; i < resourceSpans.Len(); i++ {
 - **CI/CD integrations**: GitHub Actions, Jenkins plugins
 - **Community adoption**: OpenTelemetry community feedback and contributions
 
+## Claude Code GitHub Actions
+
+Claude Code is enabled for this repository with the following permissions:
+- **Go commands**: `go test`, `go get`, `go run`, `go build`, `go mod`, `go list`, `go fmt`, `go vet`, `go doc`
+- **Make commands**: All make targets
+
+These commands are available in both:
+- Interactive mode (via @claude mentions in issues/PRs)
+- Automated PR reviews
+
 ## Notes for Claude
 
 When working on this project:
