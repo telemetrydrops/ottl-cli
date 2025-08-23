@@ -269,13 +269,29 @@ func parseDataWithContext(data []byte, ctx contextType) (interface{}, error) {
 func applyTransformation(statement string, ctx contextType, data interface{}) error {
 	switch ctx {
 	case contextTypeSpan:
-		return applySpanTransformation(statement, data.(ptrace.Traces))
+		traces, ok := data.(ptrace.Traces)
+		if !ok {
+			return fmt.Errorf("expected ptrace.Traces but got %T", data)
+		}
+		return applySpanTransformation(statement, traces)
 	case contextTypeLog:
-		return applyLogTransformation(statement, data.(plog.Logs))
+		logs, ok := data.(plog.Logs)
+		if !ok {
+			return fmt.Errorf("expected plog.Logs but got %T", data)
+		}
+		return applyLogTransformation(statement, logs)
 	case contextTypeMetric:
-		return applyMetricTransformation(statement, data.(pmetric.Metrics))
+		metrics, ok := data.(pmetric.Metrics)
+		if !ok {
+			return fmt.Errorf("expected pmetric.Metrics but got %T", data)
+		}
+		return applyMetricTransformation(statement, metrics)
 	case contextTypeDatapoint:
-		return applyDataPointTransformation(statement, data.(pmetric.Metrics))
+		metrics, ok := data.(pmetric.Metrics)
+		if !ok {
+			return fmt.Errorf("expected pmetric.Metrics but got %T", data)
+		}
+		return applyDataPointTransformation(statement, metrics)
 	default:
 		return fmt.Errorf("unsupported context type: %s", ctx)
 	}
@@ -486,11 +502,23 @@ func applyDataPointTransformation(statement string, metrics pmetric.Metrics) err
 func outputTransformedData(ctx contextType, data interface{}) error {
 	switch ctx {
 	case contextTypeSpan:
-		return outputTransformedTraces(data.(ptrace.Traces))
+		traces, ok := data.(ptrace.Traces)
+		if !ok {
+			return fmt.Errorf("expected ptrace.Traces but got %T", data)
+		}
+		return outputTransformedTraces(traces)
 	case contextTypeLog:
-		return outputTransformedLogs(data.(plog.Logs))
+		logs, ok := data.(plog.Logs)
+		if !ok {
+			return fmt.Errorf("expected plog.Logs but got %T", data)
+		}
+		return outputTransformedLogs(logs)
 	case contextTypeMetric, contextTypeDatapoint:
-		return outputTransformedMetrics(data.(pmetric.Metrics))
+		metrics, ok := data.(pmetric.Metrics)
+		if !ok {
+			return fmt.Errorf("expected pmetric.Metrics but got %T", data)
+		}
+		return outputTransformedMetrics(metrics)
 	default:
 		return fmt.Errorf("unsupported context type: %s", ctx)
 	}
