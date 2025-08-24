@@ -2,6 +2,7 @@ version: 2
 project_name: ottl
 builds:
   - id: ottl
+    main: ./cmd/ottl
     goos:
       - linux
     goarch:

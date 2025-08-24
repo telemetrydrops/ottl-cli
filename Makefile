@@ -14,7 +14,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 example:
-	echo 'set(attributes["example"], "true")' | $(BUILD_DIR)/$(BINARY_NAME) transform --input-file ./local/payload-examples/trace.json
+	echo 'set(attributes["example"], "true")' | $(BUILD_DIR)/$(BINARY_NAME) transform --input-file ./testdata/traces.json
 
 fmt:
 	go fmt ./...

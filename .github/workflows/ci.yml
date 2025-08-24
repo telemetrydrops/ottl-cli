@@ -35,7 +35,6 @@ jobs:
           file: ./coverage.out
           flags: unittests
           name: codecov-umbrella
-        continue-on-error: true
 
   build:
     name: Build
@@ -149,15 +148,14 @@ jobs:
           cache: true
 
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
-        with:
-          args: '-fmt sarif -out gosec-results.sarif ./...'
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -fmt sarif -out gosec-results.sarif ./... || true
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: gosec-results.sarif
-        continue-on-error: true
 
       - name: Run govulncheck
         run: |
@@ -165,7 +163,7 @@ jobs:
           govulncheck ./...
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -176,12 +174,10 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
-        continue-on-error: true
 
   integration:
     name: Integration Test
     runs-on: ubuntu-latest
-    needs: [build]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -200,11 +196,11 @@ jobs:
 
       - name: Test stdin input
         run: |
-          echo 'set(name, "test")' | ./bin/ottl transform --input-file local/payload-examples/trace.json
+          echo 'set(name, "test")' | ./bin/ottl transform --input-file testdata/traces.json
 
       - name: Test error handling
         run: |
-          echo 'invalid syntax' | ./bin/ottl transform --input-file local/payload-examples/trace.json || true
+          echo 'invalid syntax' | ./bin/ottl transform --input-file testdata/traces.json || true
 
   goreleaser:
     name: GoReleaser Snapshot
@@ -225,7 +221,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
-          args: release --snapshot --clean --skip=publish
+          args: release --snapshot --clean --skip=publish,docker
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

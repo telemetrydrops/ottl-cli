@@ -175,7 +175,7 @@ func readStdin() (string, error) {
 
 // readInputFile reads raw data from input file
 func readInputFile(filename string) ([]byte, error) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304 - User-provided file path is expected for CLI tool
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file %s: %w", filename, err)
 	}

@@ -197,7 +197,7 @@ When working on this project:
 - **Maintain the ultra-lean philosophy** - resist complexity
 - **Preserve single-file structure** - don't break into multiple files unless absolutely necessary
 - **Use official packages only** - avoid third-party dependencies
-- **Test with real examples** - always verify with `local/payload-examples/trace.json`
+- **Test with real examples** - always verify with `testdata/traces.json`
 - **Follow Go style guide** - run `go fmt ./...` after changes
 - **Update documentation** - keep README current with any changes
 
