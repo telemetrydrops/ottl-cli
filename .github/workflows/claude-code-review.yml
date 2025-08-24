@@ -17,14 +17,12 @@ jobs:
     #   github.event.pull_request.user.login == 'external-contributor' ||
     #   github.event.pull_request.user.login == 'new-developer' ||
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-    
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
       issues: read
       id-token: write
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,17 +41,33 @@ jobs:
           # Direct prompt for automated review (no @claude mention needed)
           direct_prompt: |
             Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
-            
+
+            1. **Conventional Commits Compliance**:
+               - Verify the PR title follows conventional commits format
+                 (e.g., feat:, fix:, docs:, style:, refactor:, test:, chore:)
+               - Check all commit messages follow conventional commits specification
+               - Ensure commit messages have proper scope when applicable (e.g., feat(auth): add login)
+               - Verify breaking changes are marked with BREAKING CHANGE in the footer or ! after the type
+
+            2. **CLAUDE.md Documentation**:
+               - Check if any new patterns, agent instructions, or learnings from this PR should be added to CLAUDE.md
+               - If new features/commands are added, verify CLAUDE.md is updated with relevant context
+               - Suggest specific additions to CLAUDE.md if agent instructions could be improved based on this code
+
+            3. **Code quality and best practices**
+            4. **Potential bugs or issues**
+            5. **Performance considerations**
+            6. **Security concerns**
+            7. **Test coverage**
+
+            If commits don't follow conventional commits format,
+            provide specific examples of how they should be formatted.
+            If CLAUDE.md needs updating, suggest specific content to add.
             Be constructive and helpful in your feedback.
 
           # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
           # use_sticky_comment: true
-          
+
           # Optional: Customize review based on file types
           # direct_prompt: |
           #   Review this PR focusing on:
@@ -61,18 +75,21 @@ jobs:
           #   - For API endpoints: Security, input validation, and error handling
           #   - For React components: Performance, accessibility, and best practices
           #   - For tests: Coverage, edge cases, and test quality
-          
+
           # Optional: Different prompts for different authors
           # direct_prompt: |
-          #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' && 
-          #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
+          #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' &&
+          #   'Welcome! Please review this PR from a first-time contributor.
+          #    Be encouraging and provide detailed explanations for any suggestions.' ||
           #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
-          
+
           # Optional: Add specific tools for running tests or linting
-          allowed_tools: "Bash(go test:*),Bash(go get:*),Bash(go run:*),Bash(go build:*),Bash(go mod:*),Bash(go list:*),Bash(go fmt:*),Bash(go vet:*),Bash(go doc:*),Bash(make:*)"
-          
+          allowed_tools: >
+            Bash(go test:*),Bash(go get:*),Bash(go run:*),Bash(go build:*),
+            Bash(go mod:*),Bash(go list:*),Bash(go fmt:*),Bash(go vet:*),
+            Bash(go doc:*),Bash(make:*)
+
           # Optional: Skip review for certain conditions
           # if: |
           #   !contains(github.event.pull_request.title, '[skip-review]') &&
           #   !contains(github.event.pull_request.title, '[WIP]')
-

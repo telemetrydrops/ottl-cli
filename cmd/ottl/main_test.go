@@ -241,15 +241,15 @@ func TestReadStdin(t *testing.T) {
 
 			// Write test input
 			go func() {
-				defer w.Close()
-				w.Write([]byte(test.input))
+				defer func() { _ = w.Close() }()
+				_, _ = w.Write([]byte(test.input))
 			}()
 
 			result, err := readStdin()
 
 			// Restore stdin
 			os.Stdin = oldStdin
-			r.Close()
+			_ = r.Close()
 
 			if test.shouldError {
 				assert.Error(t, err)
@@ -266,12 +266,12 @@ func TestReadInputFile(t *testing.T) {
 	// Create a temporary file for testing
 	tmpFile, err := os.CreateTemp("", "ottl_test_*.json")
 	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	testData := "test file content"
 	_, err = tmpFile.WriteString(testData)
 	require.NoError(t, err)
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	tests := []struct {
 		name        string
@@ -530,11 +530,11 @@ func TestOutputTransformedData(t *testing.T) {
 			err := outputTransformedData(test.ctx, test.data)
 
 			// Restore stdout
-			w.Close()
+			_ = w.Close()
 			os.Stdout = oldStdout
 
 			var buf bytes.Buffer
-			buf.ReadFrom(r)
+			_, _ = buf.ReadFrom(r)
 			output := buf.String()
 
 			if test.shouldError {
@@ -561,11 +561,11 @@ func TestTransformIntegration(t *testing.T) {
 	tracesData := readTestData(t, "traces.json")
 	tracesFile, err := os.CreateTemp("", "traces_*.json")
 	require.NoError(t, err)
-	defer os.Remove(tracesFile.Name())
+	defer func() { _ = os.Remove(tracesFile.Name()) }()
 
 	_, err = tracesFile.Write(tracesData)
 	require.NoError(t, err)
-	tracesFile.Close()
+	_ = tracesFile.Close()
 
 	tests := []struct {
 		name        string
@@ -595,8 +595,8 @@ func TestTransformIntegration(t *testing.T) {
 			os.Stdin = r
 
 			go func() {
-				defer w.Close()
-				w.Write([]byte(test.statement))
+				defer func() { _ = w.Close() }()
+				_, _ = w.Write([]byte(test.statement))
 			}()
 
 			// Capture stdout
@@ -613,12 +613,12 @@ func TestTransformIntegration(t *testing.T) {
 
 			// Restore stdin/stdout
 			os.Stdin = oldStdin
-			r.Close()
-			outW.Close()
+			_ = r.Close()
+			_ = outW.Close()
 			os.Stdout = oldStdout
 
 			var buf bytes.Buffer
-			buf.ReadFrom(outR)
+			_, _ = buf.ReadFrom(outR)
 
 			if test.shouldError {
 				assert.Error(t, err)

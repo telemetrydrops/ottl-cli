@@ -1,12 +1,16 @@
 # ottl
 
-A lean CLI wrapper around the official OpenTelemetry Transformation Language (OTTL) library for testing and applying transformations to telemetry data.
+A lean CLI wrapper around the official OpenTelemetry Transformation Language (OTTL) library for
+testing and applying transformations to telemetry data.
 
 ## Overview
 
-ottl provides a simple, focused tool for working with OTTL transformations outside of a full OpenTelemetry Collector deployment. Perfect for development, testing, debugging, and CI/CD validation of telemetry transformations.
+ottl provides a simple, focused tool for working with OTTL transformations outside of a full
+OpenTelemetry Collector deployment. Perfect for development, testing, debugging, and CI/CD
+validation of telemetry transformations.
 
 **Key Features:**
+
 - **Ultra-lean**: Single 175-line application with minimal dependencies
 - **Official compatibility**: Uses official OpenTelemetry packages for 100% compatibility
 - **Fast**: Sub-100ms transformations with ~20MB binary size
@@ -73,10 +77,12 @@ ottl transform --input-file <path> < statement.ottl
 ```
 
 **Input Methods:**
+
 - OTTL statement: Via stdin (pipe or redirect)
 - Telemetry data: Via `--input-file` flag (OTLP JSON format)
 
 **Output:**
+
 - Transformed JSON to stdout
 - Error messages to stderr
 
@@ -288,24 +294,28 @@ ottl provides clear, actionable error messages:
 ### Common Errors
 
 **Invalid JSON Input:**
+
 ```bash
 $ echo 'set(attributes["env"], "prod")' | ottl transform -i malformed.json
 Error: invalid OTLP JSON format: invalid character '}' looking for beginning of value
 ```
 
 **OTTL Syntax Error:**
+
 ```bash
 $ echo 'set(invalid syntax)' | ottl transform -i trace.json
 Error: failed to parse OTTL statement 'set(invalid syntax)': expected ( after function name
 ```
 
 **File Not Found:**
+
 ```bash
 $ echo 'set(attributes["env"], "prod")' | ottl transform -i missing.json
 Error: cannot open file missing.json: no such file or directory
 ```
 
 **Runtime Transformation Error:**
+
 ```bash
 $ echo 'set(nonexistent_field["key"], "value")' | ottl transform -i trace.json
 Error: failed to execute transformation on span: invalid path expression
@@ -329,14 +339,17 @@ echo 'set(attributes["debug"], true)' | ottl transform -i trace.json | \
 ### Common Issues
 
 **Issue**: Empty output
+
 - **Cause**: Input file contains no spans or invalid structure
 - **Solution**: Validate input with `jq '.resourceSpans | length'`
 
 **Issue**: Transformation not applied
+
 - **Cause**: OTTL statement doesn't match any spans
 - **Solution**: Test with simpler statements or verify span structure
 
 **Issue**: Performance problems with large files
+
 - **Cause**: File size exceeds memory limits
 - **Solution**: Split files or use streaming tools like `jq --stream`
 
@@ -396,35 +409,44 @@ echo 'set(attributes["test"], true)' | ./bin/ottl transform -i ./local/payload-e
 ottl supports all standard OTTL functions for span context:
 
 **Attribute Functions:**
+
 - `set()`, `delete_key()`, `delete_matching_keys()`
 - `keep_keys()`, `truncate_all()`, `limit()`
 
 **String Functions:**  
+
 - `replace_pattern()`, `replace_all_patterns()`, `replace_all_matches()`
 - `concat()`, `split()`, `join()`, `substring()`
 - `uppercase()`, `lowercase()`
 
 **Conversion Functions:**
+
 - `string()`, `int()`, `double()`, `bool()`
 
 **Conditional Functions:**
+
 - `where` clauses for conditional execution
 
 **Math Functions:**
+
 - Basic arithmetic: `+`, `-`, `*`, `/`, `%`
 
 **Comparison Operators:**
+
 - `==`, `!=`, `<`, `<=`, `>`, `>=`
 
 **Logical Operators:**
+
 - `and`, `or`, `not`
 
 For complete function reference, see the [OTTL Language Documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/ottl/LANGUAGE.md).
 
 ## Related Projects
 
-- [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) - Full-featured telemetry collection and processing
-- [OTTL Documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl) - Official OTTL language specification
+- [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) -
+  Full-featured telemetry collection and processing
+- [OTTL Documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl) -
+  Official OTTL language specification
 - [Jaeger](https://www.jaegertracing.io/) - Distributed tracing platform
 - [Prometheus](https://prometheus.io/) - Monitoring and alerting toolkit
 
@@ -435,6 +457,7 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 Built with and thanks to:
+
 - [OpenTelemetry Community](https://opentelemetry.io/) for the excellent OTTL library
 - [Cobra](https://github.com/spf13/cobra) for CLI framework
 - All contributors and users providing feedback

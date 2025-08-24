@@ -2,17 +2,20 @@
 
 ## Overview
 
-ottl-cli shall be an ultra-lean CLI wrapper around the official OpenTelemetry Transformation Language (OTTL) library, targeting exceptional simplicity while maintaining full functionality.
+ottl-cli shall be an ultra-lean CLI wrapper around the official OpenTelemetry Transformation
+Language (OTTL) library, targeting exceptional simplicity while maintaining full functionality.
 
 ## Core Architecture Requirements
 
 ### Design Principles
+
 - **Ultra-minimal codebase**: Single main.go file (target: 175 lines maximum)
 - **Direct integration**: Must use official OTTL library types and functions directly
-- **Simple CLI**: Clean cobra command structure  
+- **Simple CLI**: Clean cobra command structure
 - **Official package focus**: Direct usage of OpenTelemetry packages only
 
 ### Dependency Requirements
+
 ```go
 // Maximum 4 dependencies - using official OTel packages only
 require (
@@ -25,7 +28,7 @@ require (
 
 ## Required File Structure
 
-```
+```text
 ottl-cli/
 ├── cmd/ottl/main.go           # Complete application (target: 175 lines maximum)
 ├── go.mod                     # Maximum 4 direct dependencies
@@ -229,12 +232,14 @@ func outputTransformedTraces(traces ptrace.Traces) error {
 ## Error Handling
 
 ### Required Error Strategy
+
 - **Basic error messages**: Clear, actionable error descriptions
 - **Error context**: Include file names, line numbers when available
 - **Remediation hints**: Simple suggestions for common issues
 - **No custom error types**: Use standard Go error handling
 
 ### Common Error Scenarios
+
 ```go
 // File not found
 "Error: Cannot open file 'spans.json'\nRemediation: Ensure the file exists and is readable"
@@ -252,6 +257,7 @@ func outputTransformedTraces(traces ptrace.Traces) error {
 ## Testing Strategy
 
 ### Required Unit Tests
+
 ```go
 func TestTransformCommand_BasicTransformation(t *testing.T) {
     // Test basic set attribute operation
@@ -287,6 +293,7 @@ func TestTransformCommand_InvalidOTTL(t *testing.T) {
 ## Build Configuration
 
 ### Makefile
+
 ```makefile
 .PHONY: build test clean
 
@@ -316,6 +323,7 @@ lint:
 ## Usage Examples
 
 ### Basic Transformation
+
 ```bash
 # Set an attribute
 echo 'set(attributes["env"], "prod")' | ottl-cli transform --input-file spans.json
@@ -328,6 +336,7 @@ echo 'set(attributes["processed"], true) where name == "http.request"' | ottl-cl
 ```
 
 ### Pipeline Usage
+
 ```bash
 # Use with jq for specific output
 cat transform.ottl | ottl-cli transform --input-file spans.json | jq '.resourceSpans[0].scopeSpans[0].spans[0].attributes'
@@ -356,9 +365,12 @@ echo 'set(attributes["env"], "prod")' | ottl-cli transform --input-file input.js
 
 ## Implementation Targets
 
-This ultra-lean specification targets a 175-line single-file application that shall meet all performance requirements while providing complete OTTL functionality. The implementation shall demonstrate the power of using official OpenTelemetry packages for maximum compatibility and minimum maintenance overhead.
+This ultra-lean specification targets a 175-line single-file application that shall meet all performance
+requirements while providing complete OTTL functionality. The implementation shall demonstrate the power
+of using official OpenTelemetry packages for maximum compatibility and minimum maintenance overhead.
 
 **Target Goals:**
+
 - **Lines of code**: 175 maximum (vs typical 400-500 lines)
 - **Dependencies**: 4 official packages maximum
 - **Performance**: Must meet all specified requirements

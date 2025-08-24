@@ -96,7 +96,7 @@ var contextFlag string
 func init() {
 	transformCmd.Flags().StringVarP(&inputFile, "input-file", "i", "", "Path to OTLP JSON input file (required)")
 	transformCmd.Flags().StringVar(&contextFlag, "context", "", "Force specific OTTL context (span, log, metric, datapoint)")
-	transformCmd.MarkFlagRequired("input-file")
+	_ = transformCmd.MarkFlagRequired("input-file")
 	rootCmd.AddCommand(transformCmd)
 }
 
@@ -179,7 +179,7 @@ func readInputFile(filename string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file %s: %w", filename, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
@@ -263,7 +263,6 @@ func parseDataWithContext(data []byte, ctx contextType) (interface{}, error) {
 		return nil, fmt.Errorf("unsupported context type: %s", ctx)
 	}
 }
-
 
 // applyTransformation applies OTTL statement based on context type
 func applyTransformation(statement string, ctx contextType, data interface{}) error {
