@@ -1,0 +1,32 @@
+# Ignore version control
+.git/
+.github/
+
+# Ignore build artifacts
+bin/
+dist/
+*.exe
+ottl
+
+# Ignore documentation
+*.md
+LICENSE
+docs/
+
+# Ignore test files
+*_test.go
+local/
+
+# Ignore editor and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Ignore CI/CD files
+.goreleaser.yaml
+Makefile
+.golangci.yml
+.markdownlint.json
+.yamllint

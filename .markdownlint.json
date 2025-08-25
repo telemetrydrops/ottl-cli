@@ -1,0 +1,15 @@
+{
+  "default": true,
+  "MD013": {
+    "line_length": 120,
+    "heading_line_length": 120,
+    "code_block_line_length": 120,
+    "code_blocks": false,
+    "tables": false
+  },
+  "MD033": {
+    "allowed_elements": ["details", "summary", "example", "good-example", "bad-example"]
+  },
+  "MD041": false,
+  "no-hard-tabs": false
+}

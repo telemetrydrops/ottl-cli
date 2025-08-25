@@ -2,6 +2,7 @@ version: 2
 project_name: ottl
 builds:
   - id: ottl
+    main: ./cmd/ottl
     goos:
       - linux
     goarch:
@@ -16,7 +17,7 @@ archives:
   - id: ottl
     builds:
       - ottl
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{- if .Arm }}v{{ .Arm }}{{ end }}{{- if .Mips }}_{{ .Mips }}{{ end }}"
 dockers:
   - goos: linux
     goarch: amd64
