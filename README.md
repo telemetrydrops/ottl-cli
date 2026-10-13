@@ -35,6 +35,8 @@ sudo mv ottl /usr/local/bin/
 
 ### Build from Source
 
+Requires Go 1.27.2 or newer. CI and release builds use Go 1.27.2.
+
 ```bash
 git clone https://github.com/telemetrydrops/ottl.git
 cd ottl
